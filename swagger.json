@@ -5,8 +5,8 @@
     "description": "API for managing books and authors with CRUD operations",
     "version": "1.0.0"
   },
-  "host": "cse340-two.onrender.com",
-  "basePath": "/",
+  "host": "library-books-zaf4.onrender.com/",
+  "basePath": "https://library-books-zaf4.onrender.com//",
   "schemes": [
     "https"
   ],

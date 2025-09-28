@@ -91,18 +91,28 @@ try {
     const raw = fs.readFileSync(swaggerPath, 'utf8');
     swaggerSpec = JSON.parse(raw);
 
-    // If Swagger 2.0, set host/schemes to local server so "Try it out" hits your running API
+    // Only rewrite host/schemes to localhost in development
+    const isProd = process.env.NODE_ENV === 'production';
     if (swaggerSpec.swagger === '2.0') {
-      swaggerSpec.host = `localhost:${port}`;
-      swaggerSpec.schemes = ['http'];
+      if (!isProd) {
+        swaggerSpec.host = `localhost:${port}`;
+        swaggerSpec.schemes = ['http'];
+      } else {
+        // keep the host from swagger.json or from env in production (strip trailing slash)
+        swaggerSpec.host = (process.env.SWAGGER_HOST || swaggerSpec.host || '').replace(/\/$/, '');
+        swaggerSpec.schemes = swaggerSpec.schemes || ['https'];
+      }
       swaggerSpec.basePath = swaggerSpec.basePath || '/';
     } else if (swaggerSpec.openapi && swaggerSpec.openapi.startsWith('3')) {
-      // OpenAPI 3: set servers to local
-      swaggerSpec.servers = [{ url: `http://localhost:${port}` }];
+      if (!isProd) {
+        swaggerSpec.servers = [{ url: `http://localhost:${port}` }];
+      } else {
+        swaggerSpec.servers = [{ url: process.env.SWAGGER_SERVER_URL || (swaggerSpec.servers && swaggerSpec.servers[0] && swaggerSpec.servers[0].url) || '/' }];
+      }
     }
 
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-    console.log('✅ Swagger UI serving static swagger.json (adjusted for local server).');
+    console.log('✅ Swagger UI serving static swagger.json (adjusted for environment).');
   } else {
     // Minimal fallback spec so UI is available even if swagger.json missing
     swaggerSpec = {
